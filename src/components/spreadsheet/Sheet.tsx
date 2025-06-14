@@ -1,23 +1,28 @@
 import { useStore } from "@/lib/store";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Cell from "./Cell";
 
 const Sheet = () => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [resizing, setResizing] = useState<{
+    colIndex: number;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
 
-  const rowCount = useStore(
-    (s) => s.sheets.find((sh) => sh.id === s.activeSheetId)?.grid.length ?? 0
+  const activeSheet = useStore((s) =>
+    s.sheets.find((sh) => sh.id === s.activeSheetId)
   );
-  const colCount = useStore(
-    (s) =>
-      s.sheets.find((sh) => sh.id === s.activeSheetId)?.grid[0]?.length ?? 0
-  );
+  const { updateColumnWidth } = useStore();
+
+  const rowCount = activeSheet?.grid.length ?? 0;
+  const colCount = activeSheet?.grid[0]?.length ?? 0;
 
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 35,
+    estimateSize: (index) => activeSheet?.rowHeights?.[index] ?? 35,
     overscan: 5,
   });
 
@@ -25,53 +30,58 @@ const Sheet = () => {
     horizontal: true,
     count: colCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 100,
+    estimateSize: (index) => activeSheet?.columnWidths?.[index] ?? 100,
     overscan: 5,
   });
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const { selectedCell, activeSheetId, setSelectedCell } =
-        useStore.getState();
-      if (!selectedCell || !activeSheetId) return;
-
-      let { rowIndex, colIndex } = selectedCell;
-
-      switch (e.key) {
-        case "ArrowUp":
-          rowIndex = Math.max(0, rowIndex - 1);
-          break;
-        case "ArrowDown":
-          rowIndex = Math.min(rowCount - 1, rowIndex + 1);
-          break;
-        case "ArrowLeft":
-          colIndex = Math.max(0, colIndex - 1);
-          break;
-        case "ArrowRight":
-          colIndex = Math.min(colCount - 1, colIndex + 1);
-          break;
-        default:
-          return;
-      }
-      setSelectedCell(activeSheetId, rowIndex, colIndex);
-    };
-
-    const parent = parentRef.current;
-    parent?.addEventListener("keydown", handleKeyDown);
-    return () => {
-      parent?.removeEventListener("keydown", handleKeyDown);
-    };
+    // This is a workaround for a bug in tanstack/virtual where it doesn't always
+    // update on size changes. This forces a re-render.
+    columnVirtualizer.measure();
+    rowVirtualizer.measure();
   }, [rowCount, colCount]);
 
-  const getColumnLabel = (index: number) => {
-    let label = "";
-    let temp = index;
-    while (temp >= 0) {
-      label = String.fromCharCode((temp % 26) + 65) + label;
-      temp = Math.floor(temp / 26) - 1;
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizing || !activeSheet) return;
+
+      const deltaX = e.clientX - resizing.startX;
+      const newWidth = resizing.startWidth + deltaX;
+      updateColumnWidth(activeSheet.id, resizing.colIndex, newWidth);
+      columnVirtualizer.measure(); // Force remeasure
+    };
+
+    const handleMouseUp = () => {
+      setResizing(null);
+    };
+
+    if (resizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
     }
-    return label;
+  }, [resizing, activeSheet, updateColumnWidth, columnVirtualizer]);
+
+  const handleColumnResizeStart = (colIndex: number, startX: number) => {
+    if (!activeSheet) return;
+    setResizing({
+      colIndex,
+      startX,
+      startWidth: activeSheet.columnWidths?.[colIndex] ?? 100,
+    });
   };
+
+  // Early return if no active sheet (after all hooks)
+  if (!activeSheet) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-gray-500">
+        Select or create a sheet to get started.
+      </div>
+    );
+  }
 
   return (
     <div ref={parentRef} className="flex-1 overflow-auto relative" tabIndex={0}>
@@ -84,7 +94,7 @@ const Sheet = () => {
       >
         {/* Corner */}
         <div
-          className="sticky top-0 left-0 z-20 w-12 h-8 bg-gray-200 border-b border-r border-gray-300"
+          className="absolute top-0 left-0 z-20 w-12 h-8 bg-gray-200 border-b border-r border-gray-300"
           style={{ width: 48, height: 32 }}
         />
 
@@ -92,16 +102,21 @@ const Sheet = () => {
         {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
           <div
             key={virtualColumn.index}
-            className="absolute top-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold"
+            className="absolute top-0 left-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold group"
             style={{
-              transform: `translateX(${virtualColumn.start}px)`,
-              left: 48,
-              top: 0,
+              transform: `translateX(${virtualColumn.start + 48}px)`,
               height: 32,
               width: `${virtualColumn.size}px`,
             }}
           >
-            {getColumnLabel(virtualColumn.index)}
+            {String.fromCharCode(65 + (virtualColumn.index % 26))}
+            {/* Resize handle */}
+            <div
+              onMouseDown={(e) =>
+                handleColumnResizeStart(virtualColumn.index, e.clientX)
+              }
+              className="absolute top-0 right-0 h-full w-1 cursor-col-resize bg-blue-500 opacity-0 group-hover:opacity-100"
+            />
           </div>
         ))}
 
@@ -109,11 +124,9 @@ const Sheet = () => {
         {rowVirtualizer.getVirtualItems().map((virtualRow) => (
           <div
             key={virtualRow.index}
-            className="absolute left-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold"
+            className="absolute left-0 top-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold"
             style={{
-              transform: `translateY(${virtualRow.start}px)`,
-              top: 32,
-              left: 0,
+              transform: `translateY(${virtualRow.start + 32}px)`,
               width: 48,
               height: `${virtualRow.size}px`,
             }}
