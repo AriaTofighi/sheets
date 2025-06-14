@@ -30,7 +30,7 @@ const Sheet = () => {
     removeRow,
     selectedCell,
     setSelectedCell,
-    clearSelectedCell,
+    updateCell,
   } = useStore();
 
   const rowCount = activeSheet?.grid.length ?? 0;
@@ -98,43 +98,106 @@ const Sheet = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const { editingCell, setEditingCell } = useStore.getState();
+
       if (!selectedCell) return;
-      // Check if the event target is an input, textarea, or contenteditable element
+
       const target = e.target as HTMLElement;
+      const isEditing =
+        editingCell?.rowIndex === selectedCell.rowIndex &&
+        editingCell?.colIndex === selectedCell.colIndex;
+
+      // If we're editing, only listen for Enter
+      if (isEditing && e.key !== "Enter") {
+        return;
+      }
+      // If we are not editing, but the event is coming from an input, ignore it
       if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
+        !isEditing &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
       ) {
-        return; // Don't interfere with typing
+        return; // Don't interfere with typing in other inputs
       }
 
       let newRowIndex = selectedCell.rowIndex;
       let newColIndex = selectedCell.colIndex;
 
       switch (e.key) {
+        case "Enter":
+          e.preventDefault();
+          if (isEditing) {
+            setEditingCell(null, null, null);
+            // Move to the cell below
+            newRowIndex = Math.min(rowCount - 1, selectedCell.rowIndex + 1);
+            setSelectedCell(
+              activeSheet!.id,
+              newRowIndex,
+              selectedCell.colIndex
+            );
+            parentRef.current?.focus();
+          } else {
+            setEditingCell(
+              selectedCell.sheetId,
+              selectedCell.rowIndex,
+              selectedCell.colIndex
+            );
+          }
+          return; // Prevent further processing this keydown
         case "ArrowUp":
           e.preventDefault();
+          setEditingCell(null, null, null);
           newRowIndex = Math.max(0, selectedCell.rowIndex - 1);
           break;
         case "ArrowDown":
           e.preventDefault();
+          setEditingCell(null, null, null);
           newRowIndex = Math.min(rowCount - 1, selectedCell.rowIndex + 1);
           break;
         case "ArrowLeft":
           e.preventDefault();
+          setEditingCell(null, null, null);
           newColIndex = Math.max(0, selectedCell.colIndex - 1);
           break;
         case "ArrowRight":
           e.preventDefault();
+          setEditingCell(null, null, null);
           newColIndex = Math.min(colCount - 1, selectedCell.colIndex + 1);
           break;
         case "Delete":
         case "Backspace":
           e.preventDefault();
-          clearSelectedCell();
+          if (selectedCell) {
+            updateCell(
+              selectedCell.sheetId,
+              selectedCell.rowIndex,
+              selectedCell.colIndex,
+              ""
+            );
+          }
           return; // No need to set selected cell again
         default:
+          if (
+            !isEditing &&
+            e.key.length === 1 &&
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.altKey
+          ) {
+            e.preventDefault();
+            updateCell(
+              selectedCell.sheetId,
+              selectedCell.rowIndex,
+              selectedCell.colIndex,
+              e.key
+            );
+            setEditingCell(
+              selectedCell.sheetId,
+              selectedCell.rowIndex,
+              selectedCell.colIndex
+            );
+          }
           return;
       }
 
@@ -151,7 +214,7 @@ const Sheet = () => {
   }, [
     selectedCell,
     setSelectedCell,
-    clearSelectedCell,
+    updateCell,
     rowCount,
     colCount,
     activeSheet,

@@ -35,6 +35,7 @@ export const useStore = create<Store>()(
         activeSheetId: defaultSheet.id,
         activeSheetIndex: 0,
         selectedCell: null,
+        editingCell: null,
         history: [],
         historyIndex: -1,
         addSheet: () =>
@@ -66,6 +67,20 @@ export const useStore = create<Store>()(
             ...state,
             selectedCell: { sheetId, rowIndex, colIndex },
           })),
+        setEditingCell: (
+          sheetId: string | null,
+          rowIndex: number | null,
+          colIndex: number | null
+        ) =>
+          set((state) => {
+            if (sheetId === null || rowIndex === null || colIndex === null) {
+              return { ...state, editingCell: null };
+            }
+            return {
+              ...state,
+              editingCell: { sheetId, rowIndex, colIndex },
+            };
+          }),
         updateCell: (
           sheetId: string,
           rowIndex: number,

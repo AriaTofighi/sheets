@@ -27,6 +27,7 @@ export type Store = {
   activeSheetId: string | null;
   activeSheetIndex: number;
   selectedCell: { sheetId: string; rowIndex: number; colIndex: number } | null;
+  editingCell: { sheetId: string; rowIndex: number; colIndex: number } | null;
   history: HistoryEntry[];
   historyIndex: number;
   addSheet: () => void;
@@ -37,6 +38,11 @@ export type Store = {
     sheetId: string,
     rowIndex: number,
     colIndex: number
+  ) => void;
+  setEditingCell: (
+    sheetId: string | null,
+    rowIndex: number | null,
+    colIndex: number | null
   ) => void;
   updateCell: (
     sheetId: string,

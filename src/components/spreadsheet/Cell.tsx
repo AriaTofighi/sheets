@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { Sheet } from "@/lib/types";
@@ -15,7 +15,6 @@ const selectHfInstance = (state: {
 }) => state.sheets.find((s) => s.id === state.activeSheetId)?.hfInstance;
 
 const Cell = ({ rowIndex, colIndex }: CellProps) => {
-  const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const value =
@@ -32,16 +31,16 @@ const Cell = ({ rowIndex, colIndex }: CellProps) => {
       state.selectedCell?.rowIndex === rowIndex &&
       state.selectedCell?.colIndex === colIndex
   );
+  const isEditing = useStore(
+    (state) =>
+      state.editingCell?.sheetId === state.activeSheetId &&
+      state.editingCell?.rowIndex === rowIndex &&
+      state.editingCell?.colIndex === colIndex
+  );
   const activeSheetId = useStore((state) => state.activeSheetId);
   const hfInstance = useStore(selectHfInstance);
 
-  const { updateCell, setSelectedCell } = useStore.getState();
-
-  useEffect(() => {
-    if (!isSelected) {
-      setIsEditing(false);
-    }
-  }, [isSelected]);
+  const { updateCell, setSelectedCell, setEditingCell } = useStore.getState();
 
   useEffect(() => {
     if (isSelected && isEditing) {
@@ -58,17 +57,18 @@ const Cell = ({ rowIndex, colIndex }: CellProps) => {
   const handleClick = () => {
     if (activeSheetId) {
       setSelectedCell(activeSheetId, rowIndex, colIndex);
+      setEditingCell(null, null, null);
     }
   };
 
   const handleDoubleClick = () => {
     if (activeSheetId) {
-      setIsEditing(true);
+      setEditingCell(activeSheetId, rowIndex, colIndex);
     }
   };
 
   const handleBlur = () => {
-    setIsEditing(false);
+    setEditingCell(null, null, null);
   };
 
   let displayValue = value;
