@@ -12,6 +12,7 @@ const Toolbar = () => {
     redo,
     canUndo,
     canRedo,
+    addSheet,
   } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,7 +46,7 @@ const Toolbar = () => {
   return (
     <div className="flex flex-col">
       <div className="h-10 border-b border-gray-200 p-2 flex items-center space-x-2">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={addSheet}>
           New Sheet
         </Button>
         <div className="border-l border-gray-300 h-6 mx-2" />

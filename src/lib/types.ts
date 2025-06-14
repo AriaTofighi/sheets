@@ -30,6 +30,8 @@ export type Store = {
   history: HistoryEntry[];
   historyIndex: number;
   addSheet: () => void;
+  renameSheet: (sheetId: string, newName: string) => void;
+  deleteSheet: (sheetId: string) => void;
   setActiveSheetId: (sheetId: string) => void;
   setSelectedCell: (
     sheetId: string,
@@ -44,6 +46,11 @@ export type Store = {
   ) => void;
   updateColumnWidth: (sheetId: string, colIndex: number, width: number) => void;
   updateRowHeight: (sheetId: string, rowIndex: number, height: number) => void;
+  addRow: (sheetId: string, rowIndex: number) => void;
+  removeRow: (sheetId: string, rowIndex: number) => void;
+  addColumn: (sheetId: string, colIndex: number) => void;
+  removeColumn: (sheetId: string, colIndex: number) => void;
+  clearSelectedCell: () => void;
   exportToCSV: (sheetId: string) => void;
   importFromCSV: (sheetId: string, csvData: string) => void;
   undo: () => void;

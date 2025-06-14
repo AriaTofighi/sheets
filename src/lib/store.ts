@@ -90,7 +90,7 @@ export const useStore = create<Store>()(
 
                 sheet.hfInstance?.setCellContents(
                   {
-                    sheet: state.sheets.findIndex((s) => s.id === sheetId),
+                    sheet: 0,
                     col: colIndex,
                     row: rowIndex,
                   },
@@ -132,8 +132,8 @@ export const useStore = create<Store>()(
           set((state) => {
             const sheets = state.sheets.map((sheet) => {
               if (sheet.id === sheetId) {
-                const newColumnWidths = [...sheet.columnWidths];
-                newColumnWidths[colIndex] = Math.max(50, width);
+                const newColumnWidths = [...(sheet.columnWidths ?? [])];
+                newColumnWidths[colIndex] = Math.max(width, 20); // Minimum width
                 return { ...sheet, columnWidths: newColumnWidths };
               }
               return sheet;
@@ -144,8 +144,8 @@ export const useStore = create<Store>()(
           set((state) => {
             const sheets = state.sheets.map((sheet) => {
               if (sheet.id === sheetId) {
-                const newRowHeights = [...sheet.rowHeights];
-                newRowHeights[rowIndex] = Math.max(20, height);
+                const newRowHeights = [...(sheet.rowHeights ?? [])];
+                newRowHeights[rowIndex] = Math.max(height, 20); // Minimum height
                 return { ...sheet, rowHeights: newRowHeights };
               }
               return sheet;
@@ -242,9 +242,23 @@ export const useStore = create<Store>()(
             });
             return { ...state, sheets };
           }),
+        clearSelectedCell: () =>
+          set((state) => {
+            if (state.selectedCell) {
+              state.updateCell(
+                state.selectedCell.sheetId,
+                state.selectedCell.rowIndex,
+                state.selectedCell.colIndex,
+                ""
+              );
+            }
+            return state;
+          }),
         undo: () =>
           set((state) => {
-            if (state.historyIndex < 0) return state;
+            if (!state.canUndo()) {
+              return state;
+            }
 
             const entry = state.history[state.historyIndex];
             const sheets = state.sheets.map((sheet) => {
@@ -257,9 +271,7 @@ export const useStore = create<Store>()(
                 // Update HyperFormula instance
                 sheet.hfInstance?.setCellContents(
                   {
-                    sheet: state.sheets.findIndex(
-                      (s) => s.id === entry.sheetId
-                    ),
+                    sheet: 0,
                     col: entry.colIndex,
                     row: entry.rowIndex,
                   },
@@ -292,9 +304,7 @@ export const useStore = create<Store>()(
                 // Update HyperFormula instance
                 sheet.hfInstance?.setCellContents(
                   {
-                    sheet: state.sheets.findIndex(
-                      (s) => s.id === entry.sheetId
-                    ),
+                    sheet: 0,
                     col: entry.colIndex,
                     row: entry.rowIndex,
                   },
@@ -320,6 +330,119 @@ export const useStore = create<Store>()(
           const state = get();
           return state.historyIndex < state.history.length - 1;
         },
+        renameSheet: (sheetId: string, newName: string) =>
+          set((state) => ({
+            ...state,
+            sheets: state.sheets.map((sheet) =>
+              sheet.id === sheetId ? { ...sheet, name: newName } : sheet
+            ),
+          })),
+        deleteSheet: (sheetId: string) =>
+          set((state) => {
+            if (state.sheets.length <= 1) {
+              return state; // Don't delete the last sheet
+            }
+
+            const sheetIndex = state.sheets.findIndex((s) => s.id === sheetId);
+            if (sheetIndex === -1) {
+              return state;
+            }
+
+            const newSheets = state.sheets.filter((s) => s.id !== sheetId);
+            let newActiveSheetId = state.activeSheetId;
+
+            if (state.activeSheetId === sheetId) {
+              // If deleting the active sheet, switch to the previous one or the new first one
+              newActiveSheetId =
+                state.sheets[sheetIndex > 0 ? sheetIndex - 1 : 0]?.id;
+              if (newActiveSheetId === sheetId) {
+                // This case happens if we delete the first sheet
+                newActiveSheetId = newSheets[0].id;
+              }
+            }
+            const newActiveSheetIndex = newSheets.findIndex(
+              (s) => s.id === newActiveSheetId
+            );
+
+            return {
+              ...state,
+              sheets: newSheets,
+              activeSheetId: newActiveSheetId,
+              activeSheetIndex: newActiveSheetIndex,
+              selectedCell: null, // Clear selection
+            };
+          }),
+        addRow: (sheetId, rowIndex) =>
+          set((state) => {
+            const sheets = state.sheets.map((sheet) => {
+              if (sheet.id === sheetId) {
+                const colCount = sheet.grid[0]?.length ?? 10;
+                const newRow = Array(colCount)
+                  .fill(null)
+                  .map(() => ({ value: "" }));
+                const newGrid = [...sheet.grid];
+                newGrid.splice(rowIndex, 0, newRow);
+                const sheetIndex = state.sheets.findIndex(
+                  (s) => s.id === sheetId
+                );
+                sheet.hfInstance?.addRows(sheetIndex, [rowIndex, 1]);
+                return { ...sheet, grid: newGrid };
+              }
+              return sheet;
+            });
+            return { ...state, sheets };
+          }),
+        removeRow: (sheetId, rowIndex) =>
+          set((state) => {
+            const sheets = state.sheets.map((sheet) => {
+              if (sheet.id === sheetId && sheet.grid.length > 1) {
+                const newGrid = sheet.grid.filter((_, i) => i !== rowIndex);
+                const sheetIndex = state.sheets.findIndex(
+                  (s) => s.id === sheetId
+                );
+                sheet.hfInstance?.removeRows(sheetIndex, [rowIndex, 1]);
+                return { ...sheet, grid: newGrid };
+              }
+              return sheet;
+            });
+            return { ...state, sheets };
+          }),
+        addColumn: (sheetId, colIndex) =>
+          set((state) => {
+            const sheets = state.sheets.map((sheet) => {
+              if (sheet.id === sheetId) {
+                const newGrid = sheet.grid.map((row) => {
+                  const newRow = [...row];
+                  newRow.splice(colIndex, 0, { value: "" });
+                  return newRow;
+                });
+                const sheetIndex = state.sheets.findIndex(
+                  (s) => s.id === sheetId
+                );
+                sheet.hfInstance?.addColumns(sheetIndex, [colIndex, 1]);
+                return { ...sheet, grid: newGrid };
+              }
+              return sheet;
+            });
+            return { ...state, sheets };
+          }),
+        removeColumn: (sheetId, colIndex) =>
+          set((state) => {
+            const sheets = state.sheets.map((sheet) => {
+              if (sheet.id === sheetId && sheet.grid[0].length > 1) {
+                const newGrid = sheet.grid.map((row) =>
+                  row.filter((_, i) => i !== colIndex)
+                );
+                const sheetIndex = state.sheets.findIndex(
+                  (s) => s.id === sheetId
+                );
+                sheet.hfInstance?.removeColumns(sheetIndex, [colIndex, 1]);
+                return { ...sheet, grid: newGrid };
+              }
+              return sheet;
+            });
+            return { ...state, sheets };
+          }),
       };
     },
     {

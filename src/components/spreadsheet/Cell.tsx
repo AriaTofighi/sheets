@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import type { Sheet, Store } from "@/lib/types";
+import type { Sheet } from "@/lib/types";
 import { CellError } from "hyperformula";
 
 type CellProps = {
@@ -13,8 +13,6 @@ const selectHfInstance = (state: {
   sheets: Sheet[];
   activeSheetId: string | null;
 }) => state.sheets.find((s) => s.id === state.activeSheetId)?.hfInstance;
-
-const selectActiveSheetIndex = (state: Store) => state.activeSheetIndex;
 
 const Cell = ({ rowIndex, colIndex }: CellProps) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -35,7 +33,6 @@ const Cell = ({ rowIndex, colIndex }: CellProps) => {
       state.selectedCell?.colIndex === colIndex
   );
   const activeSheetId = useStore((state) => state.activeSheetId);
-  const activeSheetIndex = useStore(selectActiveSheetIndex);
   const hfInstance = useStore(selectHfInstance);
 
   const { updateCell, setSelectedCell } = useStore.getState();
@@ -77,7 +74,7 @@ const Cell = ({ rowIndex, colIndex }: CellProps) => {
   let displayValue = value;
   if (value.startsWith("=") && hfInstance) {
     const cellValue = hfInstance.getCellValue({
-      sheet: activeSheetIndex,
+      sheet: 0,
       col: colIndex,
       row: rowIndex,
     });
