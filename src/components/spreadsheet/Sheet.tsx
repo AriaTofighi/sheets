@@ -180,7 +180,7 @@ const Sheet = () => {
   // Early return if no active sheet (after all hooks)
   if (!activeSheet) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
         Select or create a sheet to get started.
       </div>
     );
@@ -205,7 +205,7 @@ const Sheet = () => {
       >
         {/* Corner */}
         <div
-          className="absolute top-0 left-0 z-20 w-12 h-8 bg-gray-200 border-b border-r border-gray-300"
+          className="absolute top-0 left-0 z-20 w-12 h-8 bg-muted border-b border-r"
           style={{ width: 48, height: 32 }}
         />
 
@@ -215,7 +215,7 @@ const Sheet = () => {
             <ContextMenuTrigger asChild>
               <div
                 key={virtualColumn.index}
-                className="absolute top-0 left-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold group"
+                className="absolute top-0 left-0 bg-muted border-r border-b flex items-center justify-center font-bold group"
                 style={{
                   transform: `translateX(${virtualColumn.start + 48}px)`,
                   height: 32,
@@ -228,7 +228,7 @@ const Sheet = () => {
                   onMouseDown={(e) =>
                     handleColumnResizeStart(virtualColumn.index, e.clientX)
                   }
-                  className="absolute top-0 right-0 h-full w-1 cursor-col-resize bg-blue-500 opacity-0 group-hover:opacity-100"
+                  className="absolute top-0 right-0 h-full w-1 cursor-col-resize bg-primary opacity-0 group-hover:opacity-100"
                 />
               </div>
             </ContextMenuTrigger>
@@ -266,7 +266,7 @@ const Sheet = () => {
             <ContextMenuTrigger asChild>
               <div
                 key={virtualRow.index}
-                className="absolute left-0 top-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center font-bold group"
+                className="absolute left-0 top-0 bg-muted border-r border-b flex items-center justify-center font-bold group"
                 style={{
                   transform: `translateY(${virtualRow.start + 32}px)`,
                   width: 48,
@@ -278,7 +278,7 @@ const Sheet = () => {
                   onMouseDown={(e) =>
                     handleRowResizeStart(virtualRow.index, e.clientY)
                   }
-                  className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize bg-blue-500 opacity-0 group-hover:opacity-100"
+                  className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize bg-primary opacity-0 group-hover:opacity-100"
                 />
               </div>
             </ContextMenuTrigger>

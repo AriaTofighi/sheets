@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# UI Development Guidelines
+
+When making changes to the user interface, please adhere to the following guidelines to ensure consistency and maintainability.
+
+## Component Library: shadcn/ui
+
+- **Use `shadcn/ui` components**: Whenever possible, implement UI elements using components from the `shadcn/ui` library. This helps maintain a consistent design system across the application.
+
+- **Component Documentation**: To find the correct installation command and usage examples for a specific component, refer to the official documentation. The URL for each component follows this format:
+  `https://ui.shadcn.com/docs/components/<component-name>`
+
+  For example, for the Button component, you would visit:
+  [https://ui.shadcn.com/docs/components/button](mdc:https:/ui.shadcn.com/docs/components/button)
+
+## Theming and Styling
+
+- **Avoid Hard-coded Colors**: Never hard-code color values (e.g., `text-red-500`, `bg-gray-200`). Instead, rely on the `shadcn/ui` theme variables and utility classes (e.g., `bg-primary`, `text-destructive`, `bg-muted`). The theme will handle color application automatically, ensuring consistency with the chosen style and dark mode support.
+

@@ -88,10 +88,10 @@ const Cell = ({ rowIndex, colIndex }: CellProps) => {
   return (
     <div
       className={cn(
-        "w-full h-full border-r border-b border-gray-300 flex items-center justify-start px-1",
+        "w-full h-full border-r border-b flex items-center justify-start px-1",
         {
-          "ring-2 ring-blue-500 z-10": isSelected,
-          "bg-blue-50": isSelected && !isEditing,
+          "ring-2 ring-ring z-10": isSelected,
+          "bg-accent": isSelected && !isEditing,
         }
       )}
       onClick={handleClick}

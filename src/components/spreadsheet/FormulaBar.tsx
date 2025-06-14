@@ -43,8 +43,8 @@ const FormulaBar = () => {
     <div className="flex items-center">
       <div
         className={cn(
-          "w-20 text-center text-sm font-bold border-r border-gray-300 py-2",
-          !cellLabel && "text-gray-400"
+          "w-20 text-center text-sm font-bold border-r py-2",
+          !cellLabel && "text-muted-foreground"
         )}
       >
         {cellLabel || "FX"}

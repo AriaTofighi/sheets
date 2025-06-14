@@ -2,9 +2,10 @@ import "./App.css";
 import { Toaster } from "@/components/ui/sonner";
 import Toolbar from "./components/spreadsheet/Toolbar";
 import Sheet from "./components/spreadsheet/Sheet";
-import { SheetTabs } from "./components/sheet-tabs";
+import { SheetTabs } from "./components/SheetTabs";
 import { useStore } from "./lib/store";
 import { useEffect } from "react";
+import MenuBar from "./components/MenuBar";
 
 function App() {
   const { undo, redo } = useStore();
@@ -28,6 +29,7 @@ function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col">
+      <MenuBar />
       <Toolbar />
       <Sheet />
       <SheetTabs />

@@ -45,16 +45,16 @@ export const SheetTabs = () => {
   };
 
   return (
-    <div className="flex items-center border-t border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex items-center border-t bg-muted">
       <div className="flex">
         {sheets.map((sheet) => (
           <div
             key={sheet.id}
             onDoubleClick={() => handleDoubleClick(sheet.id, sheet.name)}
-            className={`flex items-center group px-4 py-2 text-sm relative border-r border-gray-300 dark:border-gray-700 ${
+            className={`flex items-center group px-4 py-2 text-sm relative border-r ${
               activeSheetId === sheet.id
-                ? "bg-white dark:bg-gray-900 border-b-2 border-blue-500"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                ? "bg-background border-b-2 border-primary"
+                : "hover:bg-accent"
             }`}
           >
             {renamingId === sheet.id ? (
@@ -65,7 +65,7 @@ export const SheetTabs = () => {
                 onChange={(e) => setTempName(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={handleKeyDown}
-                className="bg-transparent outline-none ring-1 ring-blue-500"
+                className="bg-transparent outline-none ring-1 ring-ring"
               />
             ) : (
               <button onClick={() => setActiveSheetId(sheet.id)}>
@@ -75,7 +75,7 @@ export const SheetTabs = () => {
             {sheets.length > 1 && (
               <button
                 onClick={() => deleteSheet(sheet.id)}
-                className="ml-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500"
+                className="ml-2 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
               >
                 <XIcon size={14} />
               </button>
@@ -83,10 +83,7 @@ export const SheetTabs = () => {
           </div>
         ))}
       </div>
-      <button
-        onClick={addSheet}
-        className="px-4 py-2 text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
-      >
+      <button onClick={addSheet} className="px-4 py-2 text-sm hover:bg-accent">
         +
       </button>
     </div>
